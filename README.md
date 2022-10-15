@@ -4,3 +4,4 @@ Potrzebne biblioteki/paczki:
 - csv
 - time
 - datetime
+- screeninfo
