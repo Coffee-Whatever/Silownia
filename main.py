@@ -1,3 +1,8 @@
+import csv
+import time
+from datetime import datetime
+from screeninfo import get_monitors
+
 import kivy
 from kivy.app import App
 from kivy.app import runTouchApp
@@ -16,20 +21,18 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.floatlayout import FloatLayout
 
-import csv
-import time
-from datetime import datetime
-
 kivy.require('2.1.0')
-# cx, cy = 980, 980
-cx, cy = 1670, 980
-Window.size = (cx, cy)
+cx, cy = Window.size # pobranie wymiarów, aby wyświetlić elementy relatywnie
+if cx > cy: # ustawia wymiary okna na maksymalne-250 w obu wymiarach dla monitorów szerszych niż wyższych
+	cx, cy = get_monitors()[0].width-250, get_monitors()[0].height-250
+	Window.size = (cx, cy)
+
 Window.top = 35
 Window.left = 5
 
 class Screen(FloatLayout):
 	global cx, cy
-	Builder.load_string(f"""
+	Builder.load_string("""
 <Screen>:
 	inside:inside # python self.name : kvname
 	out:out
@@ -39,7 +42,7 @@ class Screen(FloatLayout):
 			id:inside
 			text:"Klienci na siłowni:"
 			size_hint: 0.2, 0.1
-			pos: 10, {cy - (0.1 * cy) - 15}
+			pos_hint:{"""+f"'x':{10/cx}, 'y':{(cy-(0.1 * cy)-30)/cy}"+"""}
 			canvas.before:
 				Color:
 					rgba: 100/255, 100/255, 100/255,1
@@ -50,7 +53,7 @@ class Screen(FloatLayout):
 			id:out
 			text:"Klienci poza siłownią:"
 			size_hint: 0.2, 0.1
-			pos: {(0.2 * cx) + 10}, {cy - (0.1 * cy) - 15}
+			pos_hint:{"""+f"'x':{((0.2 * cx) + 30)/cx}, 'y':{(cy-(0.1 * cy)-30)/cy}"+"""}
 			canvas.before:
 				Color:
 					rgba: 100/255, 100/255, 100/255,1
@@ -60,7 +63,7 @@ class Screen(FloatLayout):
 	pass
 class Drop(FloatLayout):
 	global cx, cy
-	Builder.load_string(f"""
+	Builder.load_string("""
 <MySlide@Slider>:
 	Label:
 		pos: (root.value_pos[0] - sp(16), root.center_y - sp(27)) if root.orientation == 'horizontal' else (root.center_x - sp(27), root.value_pos[1] - sp(16))
@@ -77,8 +80,8 @@ class Drop(FloatLayout):
 		Button:
 			id:hours
 			text:"Dokup godziny"
-			size_hint: 0.2, 0.1
-			pos: 800, {cy - (0.2 * cy) - 30}
+			size_hint: 0.25, 0.1
+			pos_hint:{"""+f"'x':0.48, 'y':{(cy-(0.2 * cy)-50)/cy}"+"""}
 			canvas.before:
 				Color:
 					rgba: 100/255, 100/255, 100/255,1
@@ -88,8 +91,8 @@ class Drop(FloatLayout):
 		Button:
 			id:new
 			text:"Dodaj nowego klienta"
-			size_hint: 0.2, 0.1
-			pos: 800, {cy - (0.5 * cy) - 30}
+			size_hint: 0.25, 0.1
+			pos_hint:{"""+f"'x':0.48, 'y':{(cy-(0.4 * cy))/cy}"+"""}
 			canvas.before:
 				Color:
 					rgba: 100/255, 100/255, 100/255,1
@@ -99,8 +102,8 @@ class Drop(FloatLayout):
 		Button:
 			id:select
 			text:'Wybierz klienta:'
-			size_hint: 0.3, 0.1
-			pos: 1140, {cy - (0.2 * cy) - 30}
+			size_hint: 0.23, 0.1
+			pos_hint:{"""+f"'x':0.75, 'y':{(cy-(0.2 * cy)-50)/cy}"+"""}
 			canvas.before:
 				Color:
 					rgba: 100/255, 100/255, 100/255,1
@@ -110,11 +113,10 @@ class Drop(FloatLayout):
 		MySlide:
 			id:slider
 			min: 24
-			max: {24 * 31} # 24 hours * full month
+			max: 744
 			step: 24
 			size_hint: 0.5, 0.1
-""" + """
-			pos_hint: {'x':0.48, 'y':0.885}
+			pos_hint: {'x':0.48, 'y':0.86}
 			canvas.before:
 				Color:
 					rgba: 100/255, 100/255, 100/255,1
@@ -122,12 +124,11 @@ class Drop(FloatLayout):
 					pos: self.pos
 					size: self.size
 """)
-
 class Main(FloatLayout):
 	def __init__(self, **kwargs):
 		global cy
 		global cx
-		super(Main, self).__init__(**kwargs) # odpala init classy FloatLayout, chyba konieczne
+		super(Main, self).__init__(**kwargs)
 		self.screen = Screen()
 		self.drop = Drop()
 
@@ -148,8 +149,6 @@ class Main(FloatLayout):
 		self.get_csv()
 		self.display()
 		self.create_time_menu()
-	def ret(self):
-		return self
 	def display(self):
 		global cy
 		global cx
@@ -162,13 +161,15 @@ class Main(FloatLayout):
 				if self.clients[x][0] not in self.inside.keys():
 					i += 1
 					nowy = Button(text=f"{self.clients[x][0]}, {self.clients[x][1]}, {self.clients[x][2]}",
-								  size_hint=(0.2, 0.1), pos=((0.2*cx)+10, (cy - 100 * i)-15))
+								  size_hint=(0.2, 0.1), pos_hint={'x': (0.2 * cx + 30) / cx,
+																  'y': (cy - 100 * i - 15) / cy})
 					nowy.bind(on_press=self.get_in)
 					self.out_widgets.append(nowy)
 				else:
 					j += 1
 					nowy = Button(text=f"{self.clients[x][0]}, {self.clients[x][1]}, {self.clients[x][2]}",
-								  size_hint=(0.2, 0.1), pos=(10, (cy - 100 * j)-15))
+								  size_hint=(0.2, 0.1), pos_hint={'x': 10/cx,
+																  'y': (cy - 100 * j - 15) / cy})
 					nowy.bind(on_press=self.get_out)
 					self.inside_widgets.append(nowy)
 		for t in self.out_widgets:
@@ -337,15 +338,13 @@ class Main(FloatLayout):
 		self.new_client_popup.dismiss()
 		pass
 
-class MyApp(App):
-	@staticmethod
-	def build():
-		return Main()
+# class MyApp(App):
+# 	@staticmethod
+# 	def build():
+# 		return Main()
 
 if __name__ == '__main__':
 	# MyApp().run()
-	root = ScrollView(size_hint=(1, None), size=Window.size)
 	main = Main()
-	root.add_widget(main)
-	runTouchApp(root)
+	runTouchApp(main)
 	pass
