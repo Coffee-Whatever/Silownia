@@ -162,14 +162,14 @@ class Main(FloatLayout):
 					i += 1
 					nowy = Button(text=f"{self.clients[x][0]}, {self.clients[x][1]}, {self.clients[x][2]}",
 								  size_hint=(0.2, 0.1), pos_hint={'x': (0.2 * cx + 30) / cx,
-																  'y': (cy - 100 * i - 15) / cy})
+																  'y': (cy - 100 * i - 20) / cy})
 					nowy.bind(on_press=self.get_in)
 					self.out_widgets.append(nowy)
 				else:
 					j += 1
 					nowy = Button(text=f"{self.clients[x][0]}, {self.clients[x][1]}, {self.clients[x][2]}",
 								  size_hint=(0.2, 0.1), pos_hint={'x': 10/cx,
-																  'y': (cy - 100 * j - 15) / cy})
+																  'y': (cy - 100 * j - 20) / cy})
 					nowy.bind(on_press=self.get_out)
 					self.inside_widgets.append(nowy)
 		for t in self.out_widgets:
@@ -284,10 +284,11 @@ class Main(FloatLayout):
 		if self.drop.select.text != "Wybierz klienta:":
 			dane = self.drop.select.text.split(", ")
 			print(dane)
-			try:
+			if not ("godzin" in dane[3]):
 				dane[3] = str(float(dane[3][:-3])*24*60 + (float(self.drop.slider.value)*60))
-			except ValueError:
-				dane[3] = str(float(dane[3][:-6])*24 + (float(self.drop.slider.value)*60))
+			else:
+				dane[3] = str(float(dane[3][:-6])*60 + (float(self.drop.slider.value)*60))
+			print(dane)
 			self.clients[dane[0]] = dane
 			self.update_csv()
 			self.update_visuals()
@@ -297,7 +298,6 @@ class Main(FloatLayout):
 			content.bind(on_press=popup.dismiss)
 			popup.open()
 	def add_new_guy(self, aghhhhhhhhhhhhhhh):
-		print("ffff")
 		content = FloatLayout()
 		self.user = []
 		self.new_client_popup = Popup(content=content, auto_dismiss=False, title='', size_hint=(1, 1))
@@ -325,11 +325,9 @@ class Main(FloatLayout):
 		pass
 	def add_new_guy_sub(self, aghhhhhhhhhhhhhhhhhhhhhhsdfdsfsd):
 		temp = self.user
-		print(temp)
 		if temp[0] != '' or temp[1] != '':
 			temp[0] = temp[0].text
 			temp[1] = temp[1].text
-			print(temp)
 			index = max(list(self.clients.keys())[1:])
 			index = str(int(index)+1)
 			self.clients[index] = [index, temp[0], temp[1], float(31*24*60)]
